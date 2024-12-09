@@ -5,6 +5,8 @@ void main() {
   runApp(const MyApp());
 }
 
+Duration _animationDuration = const Duration(milliseconds: 200);
+
 /// [Widget] building the [MaterialApp].
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -25,7 +27,7 @@ class MyApp extends StatelessWidget {
             ],
             builder: (icon, isHovered) {
               return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: _animationDuration,
                 constraints: const BoxConstraints(minWidth: 48),
                 height: isHovered ? 64 : 48,
                 width: isHovered ? 64 : 48,
@@ -78,6 +80,12 @@ class _DockState extends State<Dock> {
   /// Currently hovered index.
   int? _hoveredIndex;
 
+  /// Item currently being dragged.
+  IconData? _draggedItem;
+
+  /// Index of item being dragged
+  int? _draggedIndex;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -107,15 +115,46 @@ class _DockState extends State<Dock> {
             builder: (context, candidateData, rejectedData) {
               return Draggable<IconData>(
                 data: _items[index],
+                onDragStarted: () => setState(() {
+                  _draggedItem = _items[index];
+                  _draggedIndex = index;
+                }),
+                onDragEnd: (_) => setState(() {
+                  _draggedItem = null;
+                  _draggedIndex = null;
+                }),
                 feedback: Material(
                   color: Colors.transparent,
                   child: widget.builder(_items[index], true),
                 ),
-                childWhenDragging: const SizedBox.shrink(),
+                childWhenDragging: MouseRegion(
+                  onEnter: (_) => setState(() {
+                    _hoveredIndex = index;
+                  }),
+                  onExit: (_) => setState(() => _hoveredIndex = null),
+                  child: _hoveredIndex == _draggedIndex
+                      ? // spacing
+                      const SizedBox(
+                          width: 85.0,
+                          height: 85.0,
+                        )
+                      : SizedBox(
+                          width: ((_hoveredIndex ?? 0) + 1 == _draggedIndex || (_hoveredIndex ?? 0) - 1 == _draggedIndex) ? 84.0 : 0.0,
+                          height: 85.0,
+                        ),
+                ),
                 child: MouseRegion(
                   onEnter: (_) => setState(() => _hoveredIndex = index),
                   onExit: (_) => setState(() => _hoveredIndex = null),
-                  child: widget.builder(_items[index], _hoveredIndex == index),
+                  child: AnimatedSwitcher(
+                    duration: _animationDuration,
+                    child: AnimatedContainer(
+                      key: ValueKey(_items[index]),
+                      duration: _animationDuration,
+                      padding: (_hoveredIndex == index && _draggedItem != null) ? const EdgeInsets.symmetric(horizontal: 24.0) : const EdgeInsets.all(0.0),
+                      child: widget.builder(_items[index], _hoveredIndex == index),
+                    ),
+                  ),
                 ),
               );
             },
