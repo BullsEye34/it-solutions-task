@@ -102,62 +102,65 @@ class _DockState extends State<Dock> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(_items.length, (index) {
-          return DragTarget<IconData>(
-            onWillAcceptWithDetails: (data) => data.data != _items[index],
-            onAcceptWithDetails: (data) {
-              setState(() {
-                final oldIndex = _items.indexOf(data.data);
-                final newIndex = index;
-                _items.removeAt(oldIndex);
-                _items.insert(newIndex, data.data);
-              });
-            },
-            builder: (context, candidateData, rejectedData) {
-              return Draggable<IconData>(
-                data: _items[index],
-                onDragStarted: () => setState(() {
-                  _draggedItem = _items[index];
-                  _draggedIndex = index;
-                }),
-                onDragEnd: (_) => setState(() {
-                  _draggedItem = null;
-                  _draggedIndex = null;
-                }),
-                feedback: Material(
-                  color: Colors.transparent,
-                  child: widget.builder(_items[index], true),
-                ),
-                childWhenDragging: MouseRegion(
-                  onEnter: (_) => setState(() {
-                    _hoveredIndex = index;
+          return AnimatedSize(
+            duration: _animationDuration,
+            child: DragTarget<IconData>(
+              onWillAcceptWithDetails: (data) => data.data != _items[index],
+              onAcceptWithDetails: (data) {
+                setState(() {
+                  final oldIndex = _items.indexOf(data.data);
+                  final newIndex = index;
+                  _items.removeAt(oldIndex);
+                  _items.insert(newIndex, data.data);
+                });
+              },
+              builder: (context, candidateData, rejectedData) {
+                return Draggable<IconData>(
+                  data: _items[index],
+                  onDragStarted: () => setState(() {
+                    _draggedItem = _items[index];
+                    _draggedIndex = index;
                   }),
-                  onExit: (_) => setState(() => _hoveredIndex = null),
-                  child: _hoveredIndex == _draggedIndex
-                      ? // spacing
-                      const SizedBox(
-                          width: 85.0,
-                          height: 85.0,
-                        )
-                      : SizedBox(
-                          width: ((_hoveredIndex ?? 0) + 1 == _draggedIndex || (_hoveredIndex ?? 0) - 1 == _draggedIndex) ? 84.0 : 0.0,
-                          height: 85.0,
-                        ),
-                ),
-                child: MouseRegion(
-                  onEnter: (_) => setState(() => _hoveredIndex = index),
-                  onExit: (_) => setState(() => _hoveredIndex = null),
-                  child: AnimatedSwitcher(
-                    duration: _animationDuration,
-                    child: AnimatedContainer(
-                      key: ValueKey(_items[index]),
+                  onDragEnd: (_) => setState(() {
+                    _draggedItem = null;
+                    _draggedIndex = null;
+                  }),
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: widget.builder(_items[index], true),
+                  ),
+                  childWhenDragging: MouseRegion(
+                    onEnter: (_) => setState(() {
+                      _hoveredIndex = index;
+                    }),
+                    onExit: (_) => setState(() => _hoveredIndex = null),
+                    child: _hoveredIndex == _draggedIndex
+                        ? // spacing
+                        const SizedBox(
+                            width: 85.0,
+                            height: 85.0,
+                          )
+                        : SizedBox(
+                            width: ((_hoveredIndex ?? 0) + 1 == _draggedIndex || (_hoveredIndex ?? 0) - 1 == _draggedIndex) ? 84.0 : 0.0,
+                            height: 85.0,
+                          ),
+                  ),
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => _hoveredIndex = index),
+                    onExit: (_) => setState(() => _hoveredIndex = null),
+                    child: AnimatedSwitcher(
                       duration: _animationDuration,
-                      padding: (_hoveredIndex == index && _draggedItem != null) ? const EdgeInsets.symmetric(horizontal: 24.0) : const EdgeInsets.all(0.0),
-                      child: widget.builder(_items[index], _hoveredIndex == index),
+                      child: AnimatedContainer(
+                        key: ValueKey(_items[index]),
+                        duration: _animationDuration,
+                        padding: (_hoveredIndex == index && _draggedItem != null) ? const EdgeInsets.symmetric(horizontal: 24.0) : const EdgeInsets.all(0.0),
+                        child: widget.builder(_items[index], _hoveredIndex == index),
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         }),
       ),
